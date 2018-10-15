@@ -1,3 +1,4 @@
+								concise note
 						MuleSoft Exception Strategies
 MuleSoft provides various options for handling all different types of errors. Mule has various exception strategies available which can be configured while building your applications in Anypoint.
 When an activity in your Mule server fails, it throws an exception. You can configure Mule exception strategies to handle these exceptions.
