@@ -1,0 +1,8 @@
+          Ways of Defining the Exception Strategy
+Various ways of defining the exception strategy
+Various ways of defining the Exception Strategy Define Error HandlerWithin Mule flow 
+You can define the exception strategy within a flow and it will not be referenced by other flows within the Mule application. 
+Define Global Error Handler 
+You can define a global error handler that can be referenced from any flow (except sub-flows, which inherit the calling flow error handler) using reference flow strategy. 
+Define Custom Default Global Error Handler 
+You can define custom default global error handlers that will become the default error handler for your flows within the Mule application unless one of the above options is used in the flow.
