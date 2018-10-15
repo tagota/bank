@@ -1,0 +1,69 @@
+						MuleSoft Exception Strategies
+MuleSoft provides various options for handling all different types of errors. Mule has various exception strategies available which can be configured while building your applications in Anypoint.
+When an activity in your Mule server fails, it throws an exception. You can configure Mule exception strategies to handle these exceptions.
+Exceptions in Mule can fall into these two categories:
+1.	System Exceptions 
+2.	Messaging Exceptions
+Mule takes care of all exceptions in Mule flows by using a default exception strategy which it applies to all Mule applications implicitly. When organizations/developers have different types of requirements to handle exceptions in Mule flows, they can implement exception strategies provided by Mule for handling errors and prevent any message loss and transactional issues.
+Let's discuss different scenarios when system and messaging exceptions can occur.
+System Exceptions
+System exceptions occur when no message is involved. These exceptions occur at the system level. When exceptions occur at system level, Mule uses the System Exception Strategy to handle such exceptions. 
+You must have observed exceptions when you are trying to run the application and you see exception in logs which says "Address already in use." This is very common and I must say, every developer who has worked on HTTP Listener must have faced this. As no message is involved, this falls in the system exceptions and is handled at the system level. Mule handles it through the System Exception Strategy. 
+Another scenario can be when you are trying to connect to any SaaS application and your connector is not configured as per specifications. Your flow will throw an exception when you start the application. While connecting to the JDBC connector, we have observed exceptions in connecting to the Oracle server. While connecting with the JMS server, if there are any connections issues, Mule uses the System Exception Strategy.
+System exceptions strategies are not configurable in Anypoint. 
+Messaging Exceptions
+Messaging exception strategies are used to handle exceptions within a flow. As the name depicts, the message exception strategy will be invoked only when a message is involved in the flow.
+Suppose your flow is in the middle of processing a message, and if any error occurs, the server will stop processing through main flow and processing will be moved to an exception strategy implemented in the flow. The message processor available in the exception strategy will take control of the flow and will process it as per implementation. Any number of message processors can be added to the exception strategy.
+Mule has five different Messaging Exception strategies:
+1. Default Exception Strategy
+This strategy is applied to Mule flows implicitly and it can handle all exceptions in your flows. It can be overridden by adding a Catch, Choice, or Rollback exception strategy to the flow. Mule applies this strategy automatically and rolls back any pending transactions and logs the exception. If there is no transaction, it will still log the exception.
+Use Case
+The default exception strategy can be used when you don’t want to take any specific actions in case of exceptions.
+Configuring a Default Exception Strategy
+Mule’s default exception strategy automatically activates when any error occurs in any of your flows. It cannot be configured in Anypoint.
+You can build a global default exception strategy to customize the way Mule implicitly handles errors in your application. 
+Transaction Handling
+When a message throws an exception, the default exception strategy rolls back the message and logs the exception.
+2. Rollback Exception Strategy
+This strategy should be used when it is not possible to correct the error that occurs in a flow. It can be used in transactional flows to handle errors. If an exception is thrown while processing a message, this strategy rolls back the transaction and Mule delivers the message to the inbound connector of parent flow to reprocess the message. 
+In addition to managing transactional errors, the rollback exception strategy can be used to 
+1.	Manage exceptions that applications cannot catch.
+2.	Use in flows where a message should be redelivered in case of failure.
+A rollback exception strategy can introduce an infinite loop of activity within a flow; a message throws an error, the rollback exception strategy catches the exception and redelivers the message back for reprocessing. The message throws an error again, the rollback exception strategy catches the exception again, again does the redelivery, and so on.
+To avoid this infinite loop and responsibly manage unresolvable errors, you can apply two limitations to a rollback exception strategy:
+1.	Define the maximum number of times redelivery of a message should happen.
+2.	Define another flow to handle messages that are failing after the maximum number of redelivery attempts.
+Use Case
+This strategy is very useful when you want to roll back a message for reprocessing.
+Transaction Handling 
+The rollback exception strategy provides multiple attempts for a message to successfully move through a flow before committing a failed transaction and consuming the message.
+For example: in a banking transaction where funds are getting deposited in a checkings/savings account, you can configure a rollback exception strategy. If an error occurs during this transaction- let's say the external bank account database is not available at a specific moment- the message throws an exception. In such scenario, this strategy rolls the message back to the beginning of the flow to reattempt processing. During the second attempt, the database is back online again, and it will successfully deposit the funds into the account.
+3. Catch Exception Strategy
+This strategy catches all exceptions thrown within its parent flow and processes them, thereby overriding Mule’s implicit default exception strategy. Mule’s catch behavior is similar to a Java catch block, except that you cannot throw a new exception or catch another exception within a catch exception strategy.
+Use Case
+You can design your unique strategy for handling a message that contains an error. You can use a catch exception strategy to
+•	Avoid propagating exceptions to inbound connectors.
+•	Avoid propagating exceptions to parent flows via Flow Reference Components.
+•	Ensure that a transaction processed by the flow is not rolled back when an error occurs.
+In case of flight booking, let's say you have a flow which is processing messages from a queue, a message enricher adds a property on the message for assignment of a seat, and then sends the message to another queue. If any error occurs in this flow- say, if the seat information is not available- your message will throw an exception. Your catch exception strategy can add a header which says "no seats are available" and can push the message out of the flow to the next queue.
+Transaction Handling
+When a message throws an exception, the catch exception strategy always commits the transaction and consumes the message.
+4. Choice Exception Strategy
+This exception strategy is useful when you want to handle the exception based on the message content after an exception is thrown. It catches all exceptions thrown within its parent flow, checks the message content and exception type, and then routes the message to the appropriate exception strategy. 
+There is more than one exception strategy which is defined within this strategy. Catch or Rollback uses MEL to advise the Choice exception strategy as to which message it accepts and will be doing further processing. If none of the Choice exception strategies are able to handle the error, it routes the message to the default exception strategy.
+•	A Choice exception strategy contains one or more catch or rollback exception strategies.
+•	A Choice exception strategy cannot be nested within other choice exception strategies.
+•	Any Mule expression evaluator can be used as the expression attribute of an exception strategy.
+Use Case
+You can use a choice exception strategy to make decisions about how to handle errors that can occur in a flow.
+Transaction Handling
+Remember that a choice exception strategy checks the expression attribute of each of its exception strategies one by one, serially, to see which one should handle the error; it then routes the message to the first exception strategy that evaluates to true. Arrange your exception strategies as the top-most evaluates first, then the one below it, and so on.
+The choice exception strategy never actually performs any rollback, commit, or consume activities.
+5. Reference Exception Strategy
+This is to refer to a common exception strategy which you can define in a separate configuration file. You can create one or more global exception strategies to reuse in flows throughout your entire Mule application.
+For this, add a Reference Exception Strategy to a flow to refer the error handling the behavior of a specific global exception strategy.
+Use Case
+Use a reference exception strategy to refer to a flow which is implementing the exception strategy.
+Transaction Handling
+When a message throws an exception, the reference exception strategy refers to the error handling parameters defined in a global catch, rollback, or choice exception strategy.
+The reference exception strategy itself never actually performs any rollback, commit, or consume activities.
